@@ -78,11 +78,13 @@ app.post('/api/download', (req, res) => {
       url,
     ];
   } else {
-    // MP4 다운로드: 화질 선택
+    // MP4 다운로드: 화질 선택 (오디오 포함 보장)
     const formatStr = getVideoFormat(quality);
     ytdlpArgs = [
       '-f', formatStr,
       '--merge-output-format', 'mp4',
+      '--ffmpeg-location', '/usr/bin/ffmpeg',
+      '--postprocessor-args', 'ffmpeg:-c:v copy -c:a aac -strict experimental',
       '-o', `${tmpFile}.%(ext)s`,
       '--no-playlist',
       url,
@@ -152,13 +154,13 @@ function isValidYouTubeUrl(url) {
   return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/.test(url);
 }
 
-// ✅ 화질에 따른 yt-dlp 포맷 문자열
+// ✅ 화질에 따른 yt-dlp 포맷 문자열 (오디오 포함 보장)
 function getVideoFormat(quality) {
   switch (quality) {
-    case '360':  return 'bestvideo[height<=360]+bestaudio/best[height<=360]';
-    case '720':  return 'bestvideo[height<=720]+bestaudio/best[height<=720]';
-    case '1080': return 'bestvideo[height<=1080]+bestaudio/best[height<=1080]';
-    default:     return 'bestvideo+bestaudio/best';
+    case '360':  return 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best';
+    case '720':  return 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best';
+    case '1080': return 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best';
+    default:     return 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best';
   }
 }
 
